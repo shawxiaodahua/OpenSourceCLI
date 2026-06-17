@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+
+# Node
+cli/node_modules/
+cli/dist/
+
+# Shaw
+shaw/logs/
+shaw/sessions/
+shaw/cache/
+~/.shaw/
+.pytest_cache/
+.ruff_cache/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.local
+
+# Local notes / scratch
+record.txt
+*.log

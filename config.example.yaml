@@ -1,0 +1,35 @@
+# Shaw 配置示例 — 复制到 ~/.shaw/config.yaml 后按需修改
+provider:
+  default: anthropic          # anthropic | mock
+  anthropic:
+    api_key: ${ANTHROPIC_API_KEY}
+    model: claude-sonnet-4-6-20250515
+    max_tokens: 8192
+    # base_url: https://your-proxy.example.com   # 可选，自定义/代理端点
+
+session:
+  max_tokens: 128000
+  auto_save: true             # 自动持久化会话到 ~/.shaw/sessions/
+
+tools:
+  bash:
+    timeout: 120              # 秒
+    allowed_commands: []      # 留空则不强制白名单
+    blocked_commands:
+      - "rm -rf /"
+      - "sudo "
+  files:
+    protected_patterns:       # 这些文件禁止 Read/Write/Edit
+      - ".env*"
+      - "*.pem"
+      - "id_*"
+      - "*.key"
+      - "*.p12"
+
+skills:
+  directories: []             # 额外的技能目录，如 ["~/.shaw/skills"]
+  auto_load: []
+
+ui:
+  theme: dark
+  code_syntax: true
