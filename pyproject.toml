@@ -32,3 +32,7 @@ target-version = "py311"
 [build-system]
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+# 显式指定只打包 shaw 包，避免自动发现把 cli/ skills/ 误当 Python 包
+include = ["shaw*"]

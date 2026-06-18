@@ -36,7 +36,9 @@ def build_engine(config: dict | None = None) -> Engine:
         provider = MockProvider()
     else:
         provider_cfg = config["provider"][provider_name]
-        api_key = provider_cfg.get("api_key", "")
+        # 凭据优先级：config(已解析 ${ANTHROPIC_API_KEY}) > ANTHROPIC_AUTH_TOKEN 环境变量。
+        # 后者是 Claude Code 接入火山方舟/豆包时的标准变量，配置文件未提供 key 时回退到它。
+        api_key = provider_cfg.get("api_key", "") or os.environ.get("ANTHROPIC_AUTH_TOKEN", "")
         provider = AnthropicProvider(
             api_key=api_key,
             model=provider_cfg.get("model", "claude-sonnet-4-6-20250515"),

@@ -17,10 +17,12 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "provider": {
         "default": "anthropic",
         "anthropic": {
+            # 凭据走环境变量占位符，避免把真实/失效 key 写进源码。
+            # 解析为空时，build_engine 会回退到 ANTHROPIC_AUTH_TOKEN（Claude Code 接入 Ark 时的变量）。
             "api_key": "${ANTHROPIC_API_KEY}",
-            "model": "claude-sonnet-4-6-20250515",
+            "model": "glm-5.2",
             "max_tokens": 8192,
-            "base_url": None,  # None 表示使用官方端点
+            "base_url": "https://ark.cn-beijing.volces.com/api/coding",  # 豆包 token plan 的 Claude Code 兼容端点
         },
     },
     "session": {

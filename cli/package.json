@@ -4,10 +4,10 @@
   "description": "Shaw AI CLI - Terminal UI",
   "type": "module",
   "bin": {
-    "shaw": "./src/index.ts"
+    "shaw": "./src/index.tsx"
   },
   "scripts": {
-    "dev": "tsx src/index.ts",
+    "dev": "tsx src/index.tsx",
     "build": "tsc",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit"
