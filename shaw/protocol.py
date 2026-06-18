@@ -252,7 +252,7 @@ class JsonRpcServer:
         """主循环：从 stdin 读取消息，写响应到 stdout。"""
         reader = asyncio.StreamReader()
         protocol = asyncio.StreamReaderProtocol(reader)
-        await asyncio.get_event_loop().connect_read_pipe(lambda: protocol, sys.stdin.buffer)
+        await asyncio.get_running_loop().connect_read_pipe(lambda: protocol, sys.stdin.buffer)
 
         writer = sys.stdout.buffer
         shutdown_event = asyncio.Event()

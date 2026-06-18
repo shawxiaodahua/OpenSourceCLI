@@ -45,6 +45,8 @@ def build_engine(config: dict | None = None) -> Engine:
             max_tokens=provider_cfg.get("max_tokens", 8192),
             base_url=provider_cfg.get("base_url"),
         )
+        # 后台预热 anthropic SDK 导入（消除首条消息的数秒卡顿）
+        provider.preload()
 
     # 注册全部内置工具
     registry = ToolRegistry()

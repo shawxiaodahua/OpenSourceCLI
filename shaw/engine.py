@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from typing import Any, AsyncIterator
 
 from shaw.provider import BaseProvider, Message
@@ -116,8 +117,8 @@ class Engine:
                     # 记录 assistant 工具调用块
                     self.session.add_tool_use(event.tool_name, event.tool_input, event.tool_use_id)
 
-                    # 执行工具
-                    result = self._execute_tool(event.tool_name, event.tool_input)
+                    # 执行工具（在线程池中执行，避免阻塞事件循环）
+                    result = await self._execute_tool(event.tool_name, event.tool_input)
                     is_error = isinstance(result, str) and result.startswith("Error")
                     self.session.add_tool_result(event.tool_use_id, result)
 
@@ -133,11 +134,14 @@ class Engine:
             if not has_tool_call:
                 break
 
-    def _execute_tool(self, name: str, params: dict) -> str:
-        """通过 harness（若有）或直接 registry 执行工具。"""
-        if self.harness is not None:
-            return self.harness.execute(name, params)
-        return self.tools.execute(name, params)
+    async def _execute_tool(self, name: str, params: dict) -> str:
+        """通过 harness（若有）或直接 registry 执行工具。
+
+        工具执行（Bash/Grep 等含阻塞 IO）放到线程池运行，避免阻塞事件循环，
+        保证流式输出与 stdin 读取在长命令期间仍可响应。
+        """
+        fn = self.harness.execute if self.harness is not None else self.tools.execute
+        return await asyncio.to_thread(fn, name, params)
 
     # --- 系统提示 ---
 

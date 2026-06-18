@@ -160,6 +160,40 @@ async def test_engine_max_iterations(tmp_path):
     assert len(tool_uses) <= 25  # 默认上限
 
 
+async def test_engine_tool_executed_off_event_loop(tmp_path):
+    """工具在线程中执行（asyncio.to_thread），不阻塞事件循环，且结果正确回传。
+
+    锁定 _execute_tool 走线程池路径的回归行为：慢工具（time.sleep）也能正常
+    返回结果并继续循环。
+    """
+    import time
+
+    flag = {"ran": False}
+
+    class SlowTool(BaseTool):
+        @property
+        def tool_def(self) -> ToolDef:
+            return ToolDef(name="Slow", description="slow tool", params=[])
+
+        def execute(self, **kwargs) -> str:
+            time.sleep(0.05)  # 模拟阻塞 IO
+            flag["ran"] = True
+            return "slow-done"
+
+    provider = MockProvider([
+        [StreamEvent(type="tool_use", tool_name="Slow", tool_input={}, tool_use_id="t"), StreamEvent(type="done")],
+        [StreamEvent(type="text", content="after"), StreamEvent(type="done")],
+    ])
+    registry = ToolRegistry()
+    registry.register(SlowTool())
+    engine = _engine_with(provider, registry)
+    engine.session_manager = SessionManager(storage_dir=tmp_path)
+
+    events = [e async for e in engine.chat("go", "slow-sess")]
+    assert flag["ran"] is True
+    assert any(e["type"] == "tool_result" and "slow-done" in e["content"] for e in events)
+
+
 async def test_engine_session_persisted(tmp_path):
     """auto_save 时会话被持久化"""
     provider = MockProvider([

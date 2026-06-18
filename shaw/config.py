@@ -21,11 +21,18 @@ DEFAULT_CONFIG: dict[str, Any] = {
             # 解析为空时，build_engine 会回退到 ANTHROPIC_AUTH_TOKEN（Claude Code 接入 Ark 时的变量）。
             "api_key": "${ANTHROPIC_API_KEY}",
             "model": "glm-5.2",
+            # 单次响应的输出 token 上限，透传给 API。各模型/端点真实上限不同：
+            #   glm-4 / glm-4-plus ≈ 8192；glm-4.5 / glm-4.6 ≈ 16384；
+            #   claude-sonnet-4 系列 = 64000；火山 Ark `api/coding` 兼容层按 Claude 协议走。
+            # 设得超过模型真实上限会触发 API 400/截断，需按所用模型下调。
+            # Shaw 仅以 AnthropicProvider.MAX_TOKENS_LIMIT (128000) 做绝对兜底拦截。
             "max_tokens": 8192,
             "base_url": "https://ark.cn-beijing.volces.com/api/coding",  # 豆包 token plan 的 Claude Code 兼容端点
         },
     },
     "session": {
+        # 上下文窗口预算（仅声明；当前代码未实际使用，改它无效果）。
+        # 与 provider.anthropic.max_tokens（单次输出上限）是两个不同概念。
         "max_tokens": 128000,
         "auto_save": True,
     },

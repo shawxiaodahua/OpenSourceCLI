@@ -144,6 +144,53 @@ async def test_anthropic_stream_text_and_tool_use():
     assert len(dones) == 1
 
 
+async def test_anthropic_max_tokens_not_clamped_under_limit():
+    """max_tokens 在上限内时原样透传给 API。"""
+    provider = AnthropicProvider(api_key="k", model="m", max_tokens=8192)
+    provider._client = FakeClient([FakeEvent("message_stop")])
+    async for _ in provider.send("s", [Message("user", "x")]):
+        pass
+    assert provider._client.messages.last_kwargs["max_tokens"] == 8192
+
+
+async def test_anthropic_max_tokens_clamped_over_limit():
+    """max_tokens 超过绝对上限时被 clamp 到 MAX_TOKENS_LIMIT，避免 API 400。"""
+    from shaw.providers.anthropic import AnthropicProvider as AP
+    over = AP.MAX_TOKENS_LIMIT + 50000
+    provider = AnthropicProvider(api_key="k", model="m", max_tokens=over)
+    provider._client = FakeClient([FakeEvent("message_stop")])
+    async for _ in provider.send("s", [Message("user", "x")]):
+        pass
+    assert provider._client.messages.last_kwargs["max_tokens"] == AP.MAX_TOKENS_LIMIT
+
+
+def test_anthropic_tools_cached():
+    """同一 tools 列表对象二次转换应命中缓存，返回同一 list 对象。"""
+    provider = AnthropicProvider(api_key="k", model="m")
+    tool = ToolDef(
+        name="Read",
+        description="Read file",
+        params=[ToolParam(name="path", type="string", description="p", required=True)],
+    )
+    tools = [tool]
+    first = provider._to_anthropic_tools(tools)
+    second = provider._to_anthropic_tools(tools)
+    # 命中缓存：同一对象、内容一致
+    assert second is first
+    # 不同 tools 对象应重新构建
+    third = provider._to_anthropic_tools([tool])
+    assert third is not first
+
+
+def test_anthropic_preload_idempotent():
+    """preload() 可安全调用且幂等（不抛异常、不重复建线程）。"""
+    provider = AnthropicProvider(api_key="k", model="m")
+    provider.preload()
+    assert provider._preloaded is True
+    provider.preload()  # 重复调用不应再启动线程
+    assert provider._preloaded is True
+
+
 async def test_anthropic_stream_empty_tool_input():
     """工具调用无 input_json_delta 时 input 为空 dict"""
     events = [
